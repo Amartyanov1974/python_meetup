@@ -95,8 +95,7 @@ class Command(BaseCommand):
                         text=f'Приветствуем Вас, {username}! \nРады приветствовать Вас на нашей конференции!',
                         reply_markup=InlineKeyboardMarkup(keyboard_start),
                     )
-                    
-            Member.objects.create(chat_id=chat_id, name=username)
+                Member.objects.create(chat_id=chat_id, name=username)
             return 'MAIN_MENU'
 
 
