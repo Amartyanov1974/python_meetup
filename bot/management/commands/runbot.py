@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import logging
 import telegram
 from django.core.management.base import BaseCommand
@@ -83,23 +83,20 @@ class Command(BaseCommand):
                         reply_markup=InlineKeyboardMarkup(keyboard),
                     )
             else:
-                if query:
-                    query.edit_message_text(
-                        text=f'Здравствуйте, {username}! \nРады приветствовать Вас на нашей конференции!',
-                        reply_markup=InlineKeyboardMarkup(keyboard_start),
-                    )
-                else:
-                    update.message.reply_text(
-                        text=f'Здравствуйте, {username}! \nРады приветствовать Вас на нашей конференции!',
-                        reply_markup=InlineKeyboardMarkup(keyboard_start),
-                    )
+                update.message.reply_text(
+                    text=f'Здравствуйте, {username}! \nРады приветствовать Вас на нашей конференции!',
+                    reply_markup=InlineKeyboardMarkup(keyboard_start),
+                )
                 Member.objects.create(chat_id=chat_id, name=username)
             return 'MAIN_MENU'
 
 
+        def get_questions(update, _):
+            pass
+
+
         def show_conference_program(update, _):
             query = update.callback_query
-
             keyboard = [
                 [
                     InlineKeyboardButton('Первая тема', callback_data='to_report'),
@@ -119,18 +116,12 @@ class Command(BaseCommand):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
-            if query.data == 'to_reports':
-                query.edit_message_text(
-                    text='Выберите интересующий Вас доклад:',
-                    reply_markup=reply_markup,
-                    parse_mode=telegram.ParseMode.MARKDOWN,
-                )
-            else:
-                query.edit_message_text(
-                    text='Выберите интересующий Вас доклад:',
-                    reply_markup=reply_markup,
-                    parse_mode=telegram.ParseMode.MARKDOWN,
-                )
+            query.edit_message_text(
+                text='Выберите интересующий Вас доклад:',
+                reply_markup=reply_markup,
+                parse_mode=telegram.ParseMode.MARKDOWN,
+            )
+
             return 'REPORTS'
 
         def show_report(update, _):
@@ -170,11 +161,17 @@ class Command(BaseCommand):
                 text="В ответном сообщении пришлите, пожалуйста, тему Вашего доклада:",
                 reply_markup=reply_markup,
             )
-            return 'GET_REVIEW_TEXT'
+            return 'SEND_TITLE_REPORT'
 
 
-        def get_review_text(update, _):
-            review_text = update.message.text
+        def send_title_report(update, _):
+            title_report= update.message.text
+            chat_id = update.effective_chat.id
+            username = update.effective_chat.username
+            speaker = Member.objects.get(chat_id=chat_id)
+            date = update.message.date
+            Report.objects.create(title=title_report, speaker=speaker, published_at=date)
+            Member.objects.filter(chat_id=chat_id).update(hi_speaker=True)
             keyboard = [
                 [
                     InlineKeyboardButton('Список докладов', callback_data='to_reports'),
@@ -194,6 +191,45 @@ class Command(BaseCommand):
 
             return 'MAIN_MENU'
 
+
+        def send_question(update, _):
+            
+            query = update.callback_query
+            keyboard = [
+                [
+                    InlineKeyboardButton("На главный", callback_data="to_start"),
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.edit_message_text(
+                text="В ответном сообщении пришлите, пожалуйста, Ваш вопрос:",
+                reply_markup=reply_markup,
+            )
+
+            return 'THANKS_QUESTION'
+
+
+        def thanks_question(update, _):
+            review_text = update.message.text
+            keyboard = [
+                [
+                    InlineKeyboardButton('Список докладов', callback_data='to_reports'),
+                    InlineKeyboardButton('Сделать доклад', callback_data='make_report'),
+                ],
+                [
+                    InlineKeyboardButton('Посмотреть вопросы', callback_data='abilities'),
+                    InlineKeyboardButton('О боте', callback_data='abilities'),
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.message.reply_text(
+                text='✅ Спасибо! Ваш вопрос отправлен докладчику!',
+                reply_markup=reply_markup,
+                parse_mode=ParseMode.HTML,
+            )
+
+            return 'MAIN_MENU'
+
         def cancel(update, _):
             user = update.message.from_user
             update.message.reply_text(
@@ -205,31 +241,36 @@ class Command(BaseCommand):
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('start', start_conversation),
                           CallbackQueryHandler(start_conversation, pattern='to_start'),
-                          CallbackQueryHandler(make_report, pattern='make_report'),
-                          CallbackQueryHandler(make_report, pattern='make_report'),
                           ],
             states={
                 'MAIN_MENU': [
                     CallbackQueryHandler(show_conference_program, pattern='to_report'),
                     CallbackQueryHandler(make_report, pattern='make_report'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
+                    CallbackQueryHandler(get_questions, pattern='get_questions'),
                 ],
                 'REPORTS': [
                     CallbackQueryHandler(show_report, pattern='to_report'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'REPORT': [
-                    CallbackQueryHandler(start_conversation, pattern='(FAQ_.*)'),
+                    CallbackQueryHandler(send_question, pattern='send_question'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'MAKE_REPORT': [
-                    CallbackQueryHandler(start_conversation, pattern='(FAQ_.*)'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
 
-                'GET_REVIEW_TEXT': [
+                'SEND_TITLE_REPORT': [
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
-                    MessageHandler(Filters.text, get_review_text),
+                    MessageHandler(Filters.text, send_title_report),
+                ],
+                'SEND_QUESTION': [
+                    CallbackQueryHandler(start_conversation, pattern='to_start'),
+                ],
+                'THANKS_QUESTION': [
+                    CallbackQueryHandler(start_conversation, pattern='to_start'),
+                    MessageHandler(Filters.text, thanks_question),
                 ],
             },
             fallbacks=[CommandHandler('cancel', cancel)],

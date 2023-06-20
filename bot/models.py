@@ -24,6 +24,8 @@ class Report(models.Model):
     speaker = models.ForeignKey(Member, on_delete=models.CASCADE,
                                 verbose_name='Доклад',
                                 related_name='reports')
+    published_at = models.DateTimeField("Дата и время")
+
     class Meta:
         verbose_name = 'Доклад'
         verbose_name_plural = 'Доклады'
