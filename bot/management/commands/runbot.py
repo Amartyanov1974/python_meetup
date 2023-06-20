@@ -181,7 +181,7 @@ class Command(BaseCommand):
                     InlineKeyboardButton('Сделать доклад', callback_data='make_report'),
                 ],
                 [
-                    InlineKeyboardButton('Мои возможности', callback_data='abilities'),
+                    InlineKeyboardButton('Посмотреть вопросы', callback_data='abilities'),
                     InlineKeyboardButton('О боте', callback_data='abilities'),
                 ],
             ]
