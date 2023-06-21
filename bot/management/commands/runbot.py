@@ -61,11 +61,11 @@ class Command(BaseCommand):
 
             keyboard = [
                 [
-                    InlineKeyboardButton('Список докладов', callback_data='to_reports'),
+                    InlineKeyboardButton('Список докладов', callback_data='to_currrent'),
                     InlineKeyboardButton('Сделать доклад', callback_data='make_report'),
                 ],
                 [
-                    InlineKeyboardButton('Посмотреть вопросы', callback_data='abilities'),
+                    InlineKeyboardButton('Посмотреть вопросы', callback_data='view_questions'),
                     InlineKeyboardButton('О боте', callback_data='abilities'),
                 ],
             ]
@@ -83,32 +83,47 @@ class Command(BaseCommand):
                         reply_markup=InlineKeyboardMarkup(keyboard),
                     )
             else:
-                update.message.reply_text(
-                    text=f'Здравствуйте, {username}! \nРады приветствовать Вас на нашей конференции!',
-                    reply_markup=InlineKeyboardMarkup(keyboard_start),
-                )
+                if query.data == 'show_abilities':
+                    update.edit_message_text(
+                        text='Информация о боте, \n его возможностях',
+                        reply_markup=InlineKeyboardMarkup(keyboard_start),
+                    )
+                else:
+                     update.message.reply_text(
+                        text=f'Здравствуйте, {username}! \nРады приветствовать Вас на нашей конференции!',
+                        reply_markup=InlineKeyboardMarkup(keyboard_start),
+                    )
                 Member.objects.create(chat_id=chat_id, name=username)
             return 'MAIN_MENU'
 
+        def show_abilities(update, _):
+            query = update.callback_query
 
-        def get_questions(update, _):
-            pass
-
-
+            keyboard = [
+                [
+                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.answer()
+            query.edit_message_text(
+                text='Здесь будет информация о боте',
+                reply_markup=reply_markup,
+                parse_mode=telegram.ParseMode.MARKDOWN,
+            )
+            return 'ABILITIES'
+        
         def show_conference_program(update, _):
             query = update.callback_query
             keyboard = [
                 [
-                    InlineKeyboardButton('Первая тема', callback_data='to_report'),
-                    InlineKeyboardButton('Вторая тема', callback_data='to_report'),
+                    InlineKeyboardButton('Предыдущий', callback_data='to_previous'),
+                    InlineKeyboardButton('Текущий', callback_data='to_currrent'),
+                    InlineKeyboardButton('Следующий', callback_data='to_next'),
                 ],
                 [
-                    InlineKeyboardButton('Третья тема', callback_data='to_report'),
-                    InlineKeyboardButton('Четвертая тема', callback_data='to_report'),
-                ],
-                [
-                    InlineKeyboardButton('Пятая тема', callback_data='to_report'),
-                    InlineKeyboardButton('Шестая тема', callback_data='to_report'),
+                    InlineKeyboardButton('Программа конференции', callback_data='to_program'),
+                    InlineKeyboardButton('Подробности', callback_data='to_report'),
                 ],
                 [
                     InlineKeyboardButton('На главную', callback_data='to_start'),
@@ -116,10 +131,29 @@ class Command(BaseCommand):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
-            query.edit_message_text(
-                text='Выберите интересующий Вас доклад:',
-                reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
+            if query.data == 'to_previous':
+                query.edit_message_text(
+                text = 'Показываем предыдущий доклад',
+                reply_markup = reply_markup,
+                parse_mode = telegram.ParseMode.MARKDOWN,
+            )
+            elif query.data == 'to_currrent':
+                query.edit_message_text(
+                text = 'Показываем текущий доклад',
+                reply_markup = reply_markup,
+                parse_mode = telegram.ParseMode.MARKDOWN,
+            )
+            elif query.data == 'to_next':
+                query.edit_message_text(
+                text = 'Показываем следующий доклад',
+                reply_markup = reply_markup,
+                parse_mode = telegram.ParseMode.MARKDOWN,
+            )
+            elif query.data == 'to_program':
+                query.edit_message_text(
+                text = 'Выводим программу конференции',
+                reply_markup = reply_markup,
+                parse_mode = telegram.ParseMode.MARKDOWN,
             )
 
             return 'REPORTS'
@@ -178,7 +212,7 @@ class Command(BaseCommand):
                     InlineKeyboardButton('Сделать доклад', callback_data='make_report'),
                 ],
                 [
-                    InlineKeyboardButton('Посмотреть вопросы', callback_data='abilities'),
+                    InlineKeyboardButton('Посмотреть вопросы', callback_data='view_questions'),
                     InlineKeyboardButton('О боте', callback_data='abilities'),
                 ],
             ]
@@ -192,6 +226,10 @@ class Command(BaseCommand):
             return 'MAIN_MENU'
 
 
+        def view_questions(update, _):
+            pass
+
+        
         def send_question(update, _):
             
             query = update.callback_query
@@ -213,11 +251,11 @@ class Command(BaseCommand):
             review_text = update.message.text
             keyboard = [
                 [
-                    InlineKeyboardButton('Список докладов', callback_data='to_reports'),
+                    InlineKeyboardButton('Посмотреть доклады', callback_data='to_reports'),
                     InlineKeyboardButton('Сделать доклад', callback_data='make_report'),
                 ],
                 [
-                    InlineKeyboardButton('Посмотреть вопросы', callback_data='abilities'),
+                    InlineKeyboardButton('Посмотреть вопросы', callback_data='view_questions'),
                     InlineKeyboardButton('О боте', callback_data='abilities'),
                 ],
             ]
@@ -244,17 +282,25 @@ class Command(BaseCommand):
                           ],
             states={
                 'MAIN_MENU': [
-                    CallbackQueryHandler(show_conference_program, pattern='to_report'),
+                    CallbackQueryHandler(show_conference_program, pattern='to_currrent'),
                     CallbackQueryHandler(make_report, pattern='make_report'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
-                    CallbackQueryHandler(get_questions, pattern='get_questions'),
+                    CallbackQueryHandler(view_questions, pattern='view_questions'),
+                    CallbackQueryHandler(show_abilities, pattern='abilities'),
                 ],
                 'REPORTS': [
+                    CallbackQueryHandler(show_conference_program, pattern='to_previous'),
+                    CallbackQueryHandler(show_conference_program, pattern='to_currrent'),
+                    CallbackQueryHandler(show_conference_program, pattern='to_next'),
+                    CallbackQueryHandler(show_conference_program, pattern='to_program'),
                     CallbackQueryHandler(show_report, pattern='to_report'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'REPORT': [
                     CallbackQueryHandler(send_question, pattern='send_question'),
+                    CallbackQueryHandler(start_conversation, pattern='to_start'),
+                ],
+                'ABILITIES': [
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'MAKE_REPORT': [
