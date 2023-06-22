@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.utils import timezone
 import logging
 import telegram
 from django.core.management.base import BaseCommand
@@ -176,24 +177,33 @@ class Command(BaseCommand):
             if query.data == 'to_previous':
                 now = datetime.now()
                 report = Report.objects.filter(end_at__lt=now).order_by('-end_at').first()
+                txt = 'Доклад : {} \n \nНачало доклада: {} \nОкончание доклада: {}'.format(report.title,
+                                                                                           timezone.localtime(report.start_at),
+                                                                                           timezone.localtime(report.end_at))
                 query.edit_message_text(
-                text = report.title,
+                text = txt,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
             elif query.data == 'to_currrent':
                 now = datetime.now()
                 report = Report.objects.filter(start_at__lt=now).order_by('-start_at').first()
+                txt = 'Доклад : {} \n \nНачало доклада: {} \nОкончание доклада: {}'.format(report.title,
+                                                                                           timezone.localtime(report.start_at),
+                                                                                           timezone.localtime(report.end_at))
                 query.edit_message_text(
-                text = report.title,
+                text = txt,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
             elif query.data == 'to_next':
                 now = datetime.now()
                 report = Report.objects.filter(start_at__gt=now).order_by('start_at').first()
+                txt = 'Доклад : {} \n \nНачало доклада: {} \nОкончание доклада: {}'.format(report.title,
+                                                                                           timezone.localtime(report.start_at),
+                                                                                           timezone.localtime(report.end_at))
                 query.edit_message_text(
-                text = report.title,
+                text = txt,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
