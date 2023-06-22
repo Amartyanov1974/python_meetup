@@ -262,7 +262,7 @@ class Command(BaseCommand):
             current_report = Report.objects.filter(start_at__lte=now, end_at__gte=now).first()
             if not current_report:
                 query.answer(text="На текущий момент нет докладчика.")
-                return 'MAIN_MENU'
+                return 'REPORTS'
 
             responder = current_report.speaker
             responder_id = responder.id
