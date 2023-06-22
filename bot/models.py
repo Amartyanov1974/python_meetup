@@ -23,7 +23,8 @@ class Report(models.Model):
     speaker = models.ForeignKey(Member, on_delete=models.CASCADE,
                                 verbose_name='Доклад',
                                 related_name='reports')
-    published_at = models.DateTimeField("Дата и время")
+    start_at = models.DateTimeField("Начало доклада", null=True, blank=True)
+    end_at = models.DateTimeField("Конец доклада", null=True, blank=True)
 
     class Meta:
         verbose_name = 'Доклад'
