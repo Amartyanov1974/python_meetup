@@ -111,7 +111,7 @@ class Command(BaseCommand):
             )
 
             return 'CHOOSE_SPEAKER'
-            
+
         def get_questions(update, context):
             query = update.callback_query
             speaker_id = context.chat_data.get('speaker_id')
@@ -154,7 +154,7 @@ class Command(BaseCommand):
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
             return 'ABILITIES'
-        
+
         def show_conference_program(update, _):
             query = update.callback_query
             keyboard = [
@@ -174,32 +174,41 @@ class Command(BaseCommand):
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
             if query.data == 'to_previous':
+                now = datetime.now()
+                report = Report.objects.filter(end_at__lt=now).order_by('-end_at').first()
                 query.edit_message_text(
-                text = 'Показываем предыдущий доклад',
+                text = report.title,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
             elif query.data == 'to_currrent':
+                now = datetime.now()
+                report = Report.objects.filter(start_at__lt=now).order_by('-start_at').first()
                 query.edit_message_text(
-                text = 'Показываем текущий доклад',
+                text = report.title,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
             elif query.data == 'to_next':
+                now = datetime.now()
+                report = Report.objects.filter(start_at__gt=now).order_by('start_at').first()
                 query.edit_message_text(
-                text = 'Показываем следующий доклад',
+                text = report.title,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
             elif query.data == 'to_program':
+                now = datetime.now()
+                reports = Report.objects.all()
+                titles = [i.title for i in reports]
                 query.edit_message_text(
-                text = 'Выводим программу конференции',
+                text = titles,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
 
             return 'REPORTS'
-           
+
 
         def ask_question(update, context):
             query = update.callback_query
@@ -300,6 +309,6 @@ class Command(BaseCommand):
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(CallbackQueryHandler(ask_question, pattern='ask_question'))
         dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, save_question))
-        
+
         updater.start_polling()
         updater.idle()
