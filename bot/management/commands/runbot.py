@@ -95,12 +95,46 @@ class Command(BaseCommand):
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
             return 'MAIN_MENU'
+        
+
+        def start_meeting(update, _):
+            query = update.callback_query
+            keyboard = [
+                [
+                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.answer()
+            query.edit_message_text(
+                text='Что то должно произойти',
+                reply_markup=reply_markup,
+                parse_mode=telegram.ParseMode.MARKDOWN,
+            )
+            return 'START_MEETING'
+
+        def end_meeting(update, _):
+            query = update.callback_query
+            keyboard = [
+                [
+                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            query.answer()
+            query.edit_message_text(
+                text='Что то должно произойти',
+                reply_markup=reply_markup,
+                parse_mode=telegram.ParseMode.MARKDOWN,
+            )
+            return 'END_MEETING'
+            
 
         def get_questions(update, context):
             query = update.callback_query
-            speaker_id = context.chat_data.get('speaker_id')
+            chat_id = update.effective_chat.id
 
-            questions = Question.objects.filter(responder__id=speaker_id)
+            questions = Question.objects.filter(responder__chat_id=chat_id)
 
             keyboard = [
                 [
@@ -219,9 +253,10 @@ class Command(BaseCommand):
             query = update.callback_query
             member = Member.objects.get(chat_id=query.message.chat.id)
 
-
-            current_report = Report.objects.filter(start_at__lte=datetime.now(), end_at__gte=datetime.now()).first()
-            if current_report is None:
+            # Проверка наличия текущего докладчика
+            now = datetime.now()
+            current_report = Report.objects.filter(start_at__lte=now, end_at__gte=now).first()
+            if not current_report:
                 query.answer(text="На текущий момент нет докладчика.")
                 return 'REPORTS'
 
@@ -307,6 +342,8 @@ class Command(BaseCommand):
                           ],
             states={
                 'MAIN_MENU': [
+                    CallbackQueryHandler(start_meeting, pattern='start_meeting'),
+                    CallbackQueryHandler(end_meeting, pattern='end_meeting'),
                     CallbackQueryHandler(show_conference_program, pattern='to_currrent'),
                     CallbackQueryHandler(get_questions, pattern='get_questions'),
                     CallbackQueryHandler(show_abilities, pattern='about_bot'),
@@ -321,6 +358,12 @@ class Command(BaseCommand):
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'GET_QUESTIONS': [
+                    CallbackQueryHandler(start_conversation, pattern='to_start'),
+                ],
+                'START_MEETING': [
+                    CallbackQueryHandler(start_conversation, pattern='to_start'),
+                ],
+                'END_MEETING': [
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'ASK_QUESTION': [
