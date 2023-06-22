@@ -223,11 +223,11 @@ class Command(BaseCommand):
             query = update.callback_query
             member = Member.objects.get(chat_id=query.message.chat.id)
 
-            # Проверка наличия текущего докладчика
+
             current_report = Report.objects.filter(start_at__lte=datetime.now(), end_at__gte=datetime.now()).first()
             if current_report is None:
                 query.answer(text="На текущий момент нет докладчика.")
-                return 'MAIN_MENU'
+                return 'REPORTS'
 
             responder = current_report.speaker
             responder_id = responder.id
