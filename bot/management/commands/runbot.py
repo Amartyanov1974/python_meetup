@@ -56,7 +56,18 @@ class Command(BaseCommand):
                 member = Member.objects.get(chat_id=str(chat_id))
             except Member.DoesNotExist:
                 member = Member.objects.create(chat_id=str(chat_id),name=username)
-            if member.is_speaker:
+            if member.is_organizer:
+                keyboard = [
+                    [
+                        InlineKeyboardButton('Начало выступления', callback_data='start_meeting'),
+                        InlineKeyboardButton('Конец выступления', callback_data='end_meeting'),
+                    ],
+                    # [
+                    #     InlineKeyboardButton('Оповестить участников о новом выступлении', callback_data='view_program'),
+                    # ],
+
+                ]
+            elif member.is_speaker:
                 keyboard = [
                     [
                         InlineKeyboardButton('Как спикер', callback_data='choose_speaker'),

@@ -8,7 +8,7 @@ class Member(models.Model):
     name = models.CharField(max_length=40, verbose_name='Имя участника',
                             null=True, blank=True)
     is_speaker = models.BooleanField(default=False, verbose_name='Докладчик', )
-
+    is_organizer = models.BooleanField(default=False, verbose_name='Организатор', )
     class Meta:
         verbose_name = 'Участник'
         verbose_name_plural = 'Участники'
@@ -22,9 +22,11 @@ class Report(models.Model):
                              null=True, blank=True)
     speaker = models.ForeignKey(Member, on_delete=models.CASCADE,
                                 verbose_name='Доклад',
-                                related_name='reports')
+                                related_name='reports',
+                                limit_choices_to={'is_speaker': True})
     start_at = models.DateTimeField("Начало доклада", null=True, blank=True)
     end_at = models.DateTimeField("Конец доклада", null=True, blank=True)
+    duration = models.DurationField(verbose_name='Длительность доклада')
 
     class Meta:
         verbose_name = 'Доклад'
