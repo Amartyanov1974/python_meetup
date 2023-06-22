@@ -70,7 +70,7 @@ class Command(BaseCommand):
             elif member.is_speaker:
                 keyboard = [
                     [
-                        InlineKeyboardButton('Как спикер', callback_data='choose_speaker'),
+                        InlineKeyboardButton('Посмотреть вопросы', callback_data='get_questions'),
                     ],
                     [
                         InlineKeyboardButton('План мероприятия', callback_data='to_currrent'),
@@ -100,30 +100,6 @@ class Command(BaseCommand):
                 )
             return 'MAIN_MENU'
 
-        def choose_speaker(update, context):
-            query = update.callback_query
-            member = Member.objects.get(chat_id=query.message.chat.id)
-            speaker_id = member.id
-
-            context.chat_data['speaker_id'] = speaker_id
-            keyboard = [
-                [
-                    InlineKeyboardButton('Посмотреть вопросы', callback_data='get_questions'),
-                ],
-                [
-                    InlineKeyboardButton('На главную', callback_data='to_start'),
-                ],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.answer()
-            query.edit_message_text(
-                text='Можете проверить задал ли вам кто-то вопрос:',
-                reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
-            )
-
-            return 'CHOOSE_SPEAKER'
-
         def get_questions(update, context):
             query = update.callback_query
             speaker_id = context.chat_data.get('speaker_id')
@@ -149,6 +125,7 @@ class Command(BaseCommand):
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.HTML,
             )
+            return 'GET_QUESTIONS'
 
         def show_abilities(update, _):
             query = update.callback_query
@@ -189,9 +166,12 @@ class Command(BaseCommand):
             if query.data == 'to_previous':
                 now = datetime.now()
                 report = Report.objects.filter(end_at__lt=now).order_by('-end_at').first()
-                txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
+                if report:
+                    txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
                                                                                            timezone.localtime(report.start_at),
                                                                                            timezone.localtime(report.end_at))
+                else:
+                    txt = 'Докладов еще не было'
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
@@ -199,10 +179,13 @@ class Command(BaseCommand):
             )
             elif query.data == 'to_currrent':
                 now = datetime.now()
-                report = Report.objects.filter(start_at__lt=now).order_by('-start_at').first()
-                txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
+                report = Report.objects.filter(start_at__lt=now, end_at__gt=now).first()
+                if report:
+                    txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
                                                                                            timezone.localtime(report.start_at),
                                                                                            timezone.localtime(report.end_at))
+                else:
+                    txt = 'Докладов сейчас нет'
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
@@ -211,9 +194,12 @@ class Command(BaseCommand):
             elif query.data == 'to_next':
                 now = datetime.now()
                 report = Report.objects.filter(start_at__gt=now).order_by('start_at').first()
-                txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
+                if report:
+                    txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
                                                                                            timezone.localtime(report.start_at),
                                                                                            timezone.localtime(report.end_at))
+                else:
+                    txt = 'Докладов больше нет'
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
@@ -306,7 +292,7 @@ class Command(BaseCommand):
             states={
                 'MAIN_MENU': [
                     CallbackQueryHandler(show_conference_program, pattern='to_currrent'),
-                    CallbackQueryHandler(choose_speaker, pattern='choose_speaker'),
+                    CallbackQueryHandler(get_questions, pattern='get_questions'),
                     CallbackQueryHandler(show_abilities, pattern='about_bot'),
                 ],
                 'REPORTS': [
@@ -315,10 +301,6 @@ class Command(BaseCommand):
                     CallbackQueryHandler(show_conference_program, pattern='to_next'),
                     CallbackQueryHandler(show_conference_program, pattern='to_program'),
                     CallbackQueryHandler(ask_question, pattern='ask_question'),
-                    CallbackQueryHandler(start_conversation, pattern='to_start'),
-                ],
-                'CHOOSE_SPEAKER': [
-                    CallbackQueryHandler(get_questions, pattern='get_questions'),
                     CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
                 'GET_QUESTIONS': [
