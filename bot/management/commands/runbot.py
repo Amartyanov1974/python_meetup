@@ -185,6 +185,7 @@ class Command(BaseCommand):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
+
             if query.data == 'to_previous':
                 now = datetime.now()
                 report = Report.objects.filter(end_at__lt=now).order_by('-end_at').first()
@@ -232,13 +233,19 @@ class Command(BaseCommand):
 
             return 'REPORTS'
 
-
         def ask_question(update, context):
             query = update.callback_query
             member = Member.objects.get(chat_id=query.message.chat.id)
-            asker = member.name
-            responder_id = member.id
-            context.chat_data['asker'] = asker
+
+            # Проверка наличия текущего докладчика
+            current_report = Report.objects.filter(start_at__lte=datetime.now(), end_at__gte=datetime.now()).first()
+            if current_report is None:
+                query.answer(text="На текущий момент нет докладчика.")
+                return 'MAIN_MENU'
+
+            responder = current_report.speaker
+            responder_id = responder.id
+            context.chat_data['asker'] = member.name
             context.chat_data['responder_id'] = responder_id
 
             keyboard = [
