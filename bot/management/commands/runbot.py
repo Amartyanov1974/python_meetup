@@ -136,7 +136,7 @@ class Command(BaseCommand):
             query.edit_message_text(
                 text=message_text,
                 reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
+                parse_mode=telegram.ParseMode.HTML,
             )
 
         def show_abilities(update, _):
@@ -177,46 +177,46 @@ class Command(BaseCommand):
             if query.data == 'to_previous':
                 now = datetime.now()
                 report = Report.objects.filter(end_at__lt=now).order_by('-end_at').first()
-                txt = 'Доклад : {} \n \nНачало доклада: {} \nОкончание доклада: {}'.format(report.title,
+                txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
                                                                                            timezone.localtime(report.start_at),
                                                                                            timezone.localtime(report.end_at))
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
-                parse_mode = telegram.ParseMode.MARKDOWN,
+                parse_mode = telegram.ParseMode.HTML,
             )
             elif query.data == 'to_currrent':
                 now = datetime.now()
                 report = Report.objects.filter(start_at__lt=now).order_by('-start_at').first()
-                txt = 'Доклад : {} \n \nНачало доклада: {} \nОкончание доклада: {}'.format(report.title,
+                txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
                                                                                            timezone.localtime(report.start_at),
                                                                                            timezone.localtime(report.end_at))
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
-                parse_mode = telegram.ParseMode.MARKDOWN,
+                parse_mode = telegram.ParseMode.HTML,
             )
             elif query.data == 'to_next':
                 now = datetime.now()
                 report = Report.objects.filter(start_at__gt=now).order_by('start_at').first()
-                txt = 'Доклад : {} \n \nНачало доклада: {} \nОкончание доклада: {}'.format(report.title,
+                txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}'.format(report.title, report.speaker,
                                                                                            timezone.localtime(report.start_at),
                                                                                            timezone.localtime(report.end_at))
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
-                parse_mode = telegram.ParseMode.MARKDOWN,
+                parse_mode = telegram.ParseMode.HTML,
             )
             elif query.data == 'to_program':
                 now = datetime.now()
                 reports = Report.objects.all()
                 txt = ''
                 for report in reports:
-                    txt = f'{txt} \n{report.title} \n {timezone.localtime(report.start_at).time()} - {timezone.localtime(report.end_at).time()}'
+                    txt = f'{txt} \n{report.title} \n{report.speaker} \n{timezone.localtime(report.start_at).time()} - {timezone.localtime(report.end_at).time()}'
                 query.edit_message_text(
                 text = txt,
                 reply_markup = reply_markup,
-                parse_mode = telegram.ParseMode.MARKDOWN,
+                parse_mode = telegram.ParseMode.HTML,
             )
 
             return 'REPORTS'
