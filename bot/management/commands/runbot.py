@@ -210,9 +210,11 @@ class Command(BaseCommand):
             elif query.data == 'to_program':
                 now = datetime.now()
                 reports = Report.objects.all()
-                titles = [i.title for i in reports]
+                txt = ''
+                for report in reports:
+                    txt = f'{txt} \n{report.title} \n {timezone.localtime(report.start_at).time()} - {timezone.localtime(report.end_at).time()}'
                 query.edit_message_text(
-                text = titles,
+                text = txt,
                 reply_markup = reply_markup,
                 parse_mode = telegram.ParseMode.MARKDOWN,
             )
