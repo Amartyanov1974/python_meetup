@@ -26,10 +26,13 @@ class MemberAdmin(admin.ModelAdmin):
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
+    ordering = ['start_at']
     list_display = (
         'title',
         'speaker',
-    )    
+        'start_at',
+        'end_at',
+    )
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
