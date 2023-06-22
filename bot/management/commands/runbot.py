@@ -95,40 +95,6 @@ class Command(BaseCommand):
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
             return 'MAIN_MENU'
-        
-
-        def start_meeting(update, _):
-            query = update.callback_query
-            keyboard = [
-                [
-                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
-                ],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.answer()
-            query.edit_message_text(
-                text='Что то должно произойти',
-                reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
-            )
-            return 'START_MEETING'
-
-        def end_meeting(update, _):
-            query = update.callback_query
-            keyboard = [
-                [
-                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
-                ],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.answer()
-            query.edit_message_text(
-                text='Что то должно произойти',
-                reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
-            )
-            return 'END_MEETING'
-            
 
         def get_questions(update, context):
             query = update.callback_query
@@ -342,8 +308,6 @@ class Command(BaseCommand):
                           ],
             states={
                 'MAIN_MENU': [
-                    CallbackQueryHandler(start_meeting, pattern='start_meeting'),
-                    CallbackQueryHandler(end_meeting, pattern='end_meeting'),
                     CallbackQueryHandler(show_conference_program, pattern='to_currrent'),
                     CallbackQueryHandler(get_questions, pattern='get_questions'),
                     CallbackQueryHandler(show_abilities, pattern='about_bot'),
