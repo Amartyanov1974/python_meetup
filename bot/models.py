@@ -14,7 +14,7 @@ class Member(models.Model):
         verbose_name_plural = 'Участники'
 
     def __str__(self):
-        return f'#{self.pk} {self.name}'
+        return self.name
 
 
 class Report(models.Model):
