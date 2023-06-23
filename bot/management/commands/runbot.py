@@ -29,6 +29,7 @@ from bot.models import (
 from python_meetup import settings
 from bot.bot_description import (
     DESCRIPTION,
+    TEXT,
 )
 
 logging.basicConfig(
@@ -123,7 +124,7 @@ class Command(BaseCommand):
 
             query.answer()
             query.edit_message_text(
-                text='Введите время в минутах, на сколько хотите уменьшить (укажите время с минусом) или увеличить текущий доклад и сдвинуть всю программу:',
+                text=TEXT['minutes'],
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
@@ -206,7 +207,7 @@ class Command(BaseCommand):
                 report = Report.objects.filter(end_at__lt=now) \
                     .order_by('-end_at').first()
                 if report:
-                    txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}' \
+                    txt = TEXT['report'] \
                         .format(report.title, report.speaker,
                                 timezone.localtime(report.start_at),
                                 timezone.localtime(report.end_at))
@@ -222,7 +223,7 @@ class Command(BaseCommand):
                 report = Report.objects.filter(start_at__lt=now,
                                                end_at__gt=now).first()
                 if report:
-                    txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}' \
+                    txt = TEXT['report'] \
                         .format(report.title, report.speaker,
                                 timezone.localtime(report.start_at),
                                 timezone.localtime(report.end_at))
@@ -238,7 +239,7 @@ class Command(BaseCommand):
                 report = Report.objects.filter(start_at__gt=now) \
                     .order_by('start_at').first()
                 if report:
-                    txt = 'Доклад : {} \nДокладчик: {}\nНачало доклада: {} \nОкончание доклада: {}' \
+                    txt = TEXT['report'] \
                         .format(report.title, report.speaker,
                                 timezone.localtime(report.start_at),
                                 timezone.localtime(report.end_at))
