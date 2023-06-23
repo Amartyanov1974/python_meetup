@@ -350,9 +350,11 @@ class Command(BaseCommand):
                 report.end_at += timedelta(minutes=minutes)
                 report.save()
 
-            context.bot.send_message(chat_id=update.effective_chat.id,
-                                     text=f'Время всех докладов успешно сдвинуто на {minutes} минут.')
+            reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('На главную', callback_data='to_start')]])
 
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                                     text=f'Время всех докладов успешно сдвинуто на {minutes} минут.',
+                                     reply_markup=reply_markup)
             return 'MAIN_MENU'
 
         def cancel(update, _):
