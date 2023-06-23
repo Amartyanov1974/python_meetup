@@ -21,7 +21,7 @@ class Report(models.Model):
     title = models.CharField(max_length=40, verbose_name='Название доклада',
                              null=True, blank=True)
     speaker = models.ForeignKey(Member, on_delete=models.CASCADE,
-                                verbose_name='Доклад',
+                                verbose_name='Докладчик',
                                 related_name='reports',
                                 limit_choices_to={'is_speaker': True})
     start_at = models.DateTimeField("Начало доклада", null=True, blank=True)
