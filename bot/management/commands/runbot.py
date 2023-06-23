@@ -123,7 +123,7 @@ class Command(BaseCommand):
 
             query.answer()
             query.edit_message_text(
-                text='Введите время в минутах на сколько хотите сдвинуть программу:',
+                text='Введите время в минутах, на сколько хотите уменьшить (укажите время с минусом) или увеличить текущий доклад и сдвинуть всю программу:',
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
