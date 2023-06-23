@@ -95,7 +95,7 @@ python manage.py runserver
 
 `Доклады`
 
-<img width="634" alt="доклады" src="https://github.com/RomanRVV/python_meetup/assets/129319859/6b4f8810-bf71-42cb-9f0e-9019070ab2a2">
+<img width="634" alt="доклады" src="https://github.com/RomanRVV/python_meetup/assets/129319859/7c5f1378-2ddd-4d93-b3f6-224a78ad5a78">
 
 
 В этой вкладке отображаются доклады с указанием докладчика, временем начала и конца доклада.
