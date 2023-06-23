@@ -1,4 +1,6 @@
 from datetime import datetime
+from datetime import timedelta
+
 from django.utils import timezone
 import logging
 import telegram
@@ -28,9 +30,10 @@ from bot.models import (
     Event,
 )
 
-
 from python_meetup import settings
-from datetime import timedelta
+from bot.bot_description import (
+    description,
+)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s', level=logging.INFO,
@@ -159,7 +162,7 @@ class Command(BaseCommand):
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
             query.edit_message_text(
-                text='Здесь будет информация о боте',
+                text=description,
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
