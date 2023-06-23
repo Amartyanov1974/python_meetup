@@ -1,8 +1,8 @@
 from datetime import datetime
 from datetime import timedelta
+import logging
 
 from django.utils import timezone
-import logging
 import telegram
 from django.core.management.base import BaseCommand
 from telegram import (
@@ -28,7 +28,7 @@ from bot.models import (
 
 from python_meetup import settings
 from bot.bot_description import (
-    description,
+    DESCRIPTION,
 )
 
 logging.basicConfig(
@@ -173,7 +173,7 @@ class Command(BaseCommand):
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
             query.edit_message_text(
-                text=description,
+                text=DESCRIPTION,
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
@@ -360,7 +360,6 @@ class Command(BaseCommand):
             return 'MAIN_MENU'
 
         def cancel(update, _):
-            user = update.message.from_user
             update.message.reply_text('До новых встреч',
                                       reply_markup=ReplyKeyboardRemove(),)
             return ConversationHandler.END
