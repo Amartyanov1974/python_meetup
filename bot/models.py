@@ -26,7 +26,6 @@ class Report(models.Model):
                                 limit_choices_to={'is_speaker': True})
     start_at = models.DateTimeField("Начало доклада", null=True, blank=True)
     end_at = models.DateTimeField("Конец доклада", null=True, blank=True)
-    duration = models.DurationField(verbose_name='Длительность доклада')
 
     class Meta:
         verbose_name = 'Доклад'
