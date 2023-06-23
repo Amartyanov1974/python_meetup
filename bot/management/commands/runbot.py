@@ -349,6 +349,12 @@ class Command(BaseCommand):
                 report.start_at += timedelta(minutes=minutes)
                 report.end_at += timedelta(minutes=minutes)
                 report.save()
+                txt = f'Ваш доклад сдвинут на {minutes} минут!'
+                try:
+                    context.bot.send_message(chat_id=report.speaker.chat_id,
+                                            text=txt)
+                except telegram.error.BadRequest:
+                    pass                            
 
             reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('На главную', callback_data='to_start')]])
 
