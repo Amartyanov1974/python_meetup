@@ -146,7 +146,7 @@ class Command(BaseCommand):
             query.answer()
 
             if questions.exists():
-                questions_text = '\n\n'.join(f'{i+1}. (Слушатель: {quest.asker.name})\n   Вопрос: {quest.title}' for i, quest in enumerate(questions))
+                questions_text = '\n\n'.join(f'{i+1}. (Слушатель: @{quest.asker.name})\n   Вопрос: {quest.title}' for i, quest in enumerate(questions))
                 message_text = f'Адресованные вам вопросы:\n\n{questions_text}'
             else:
                 message_text = 'У вас пока нет адресованных вопросов.'
