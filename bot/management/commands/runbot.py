@@ -177,7 +177,7 @@ class Command(BaseCommand):
             )
             return 'ABILITIES'
 
-        def show_conference_program(update, _):
+        def show_conference_program(update, context):
             query = update.callback_query
             keyboard = [
                 [
@@ -201,12 +201,13 @@ class Command(BaseCommand):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             query.answer()
-
+            context.chat_data['chat_id'] = ''
             if query.data == 'to_previous':
                 now = datetime.now()
                 report = Report.objects.filter(end_at__lt=now) \
                     .order_by('-end_at').first()
                 if report:
+                    context.chat_data['chat_id'] = report.speaker.chat_id
                     txt = TEXT['report'] \
                         .format(report.title, report.speaker,
                                 timezone.localtime(report.start_at),
@@ -223,6 +224,7 @@ class Command(BaseCommand):
                 report = Report.objects.filter(start_at__lt=now,
                                                end_at__gt=now).first()
                 if report:
+                    context.chat_data['chat_id'] = report.speaker.chat_id
                     txt = TEXT['report'] \
                         .format(report.title, report.speaker,
                                 timezone.localtime(report.start_at),
@@ -239,6 +241,7 @@ class Command(BaseCommand):
                 report = Report.objects.filter(start_at__gt=now) \
                     .order_by('start_at').first()
                 if report:
+                    context.chat_data['chat_id'] = report.speaker.chat_id
                     txt = TEXT['report'] \
                         .format(report.title, report.speaker,
                                 timezone.localtime(report.start_at),
@@ -252,7 +255,7 @@ class Command(BaseCommand):
                 )
             elif query.data == 'to_program':
                 now = datetime.now()
-                reports = Report.objects.all()
+                reports = Report.objects.all().order_by('start_at')
                 txt = ''
                 if reports:
                     for report in reports:
@@ -273,20 +276,16 @@ class Command(BaseCommand):
 
         def ask_question(update, context):
             query = update.callback_query
-            member = Member.objects.get(chat_id=query.message.chat.id)
-
-
-            now = datetime.now()
-            current_report = Report.objects.filter(start_at__lte=now,
-                                                   end_at__gte=now).first()
-            if not current_report:
-                query.answer(text="На текущий момент нет докладчика.")
+            asker_name = Member.objects.get(chat_id=query.message.chat.id).name
+            chat_id = context.chat_data['chat_id']
+            if not chat_id:
+                query.answer(text="Выберите доклад и спикера.")
                 return 'REPORTS'
 
-            responder = current_report.speaker
+            responder = Member.objects.get(chat_id=chat_id)
             responder_id = responder.id
-            context.chat_data['asker'] = member.name
-            context.chat_data['responder_id'] = responder_id
+            context.chat_data['asker'] = asker_name
+            context.chat_data['responder_id'] = responder.id
 
             keyboard = [
                 [InlineKeyboardButton('На главную', callback_data='to_start')],
@@ -295,9 +294,9 @@ class Command(BaseCommand):
 
             query.answer()
             query.edit_message_text(
-                text='Введите вопрос:',
+                text=f'Введите вопрос для докладчика {responder.name}:',
                 reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
+                parse_mode=telegram.ParseMode.HTML,
             )
 
             return 'SAVE_QUESTION'
