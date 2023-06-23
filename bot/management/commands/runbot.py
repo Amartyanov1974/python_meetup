@@ -129,7 +129,7 @@ class Command(BaseCommand):
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
 
-            return 'INPUT_TIME'
+            return 'SHIFT_REPORTS'
 
         def get_questions(update, context):
             query = update.callback_query
@@ -300,7 +300,7 @@ class Command(BaseCommand):
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
 
-            return 'ASK_QUESTION'
+            return 'SAVE_QUESTION'
 
         def save_question(update, context):
             question_text = update.message.text
@@ -328,7 +328,7 @@ class Command(BaseCommand):
                                       reply_markup=reply_markup,
                                       parse_mode=telegram.ParseMode.MARKDOWN,)
 
-            return 'MAIN_MENU'
+            return 'SAVE_QUESTION'
 
         def shift_reports(update, context):
 
@@ -362,7 +362,7 @@ class Command(BaseCommand):
             context.bot.send_message(chat_id=update.effective_chat.id,
                                      text=f'Время всех докладов успешно сдвинуто на {minutes} минут.',
                                      reply_markup=reply_markup)
-            return 'MAIN_MENU'
+            return 'SHIFT_REPORTS'
 
         def cancel(update, _):
             update.message.reply_text('До новых встреч',
@@ -423,6 +423,18 @@ class Command(BaseCommand):
                     CallbackQueryHandler(start_conversation,
                                          pattern='to_start'),
                 ],
+                'SHIFT_REPORTS': [
+                    CallbackQueryHandler(start_conversation,
+                                         pattern='to_start'),
+                    MessageHandler(Filters.text & ~Filters.command,
+                                              shift_reports),
+                ],
+                'SAVE_QUESTION': [
+                    CallbackQueryHandler(start_conversation,
+                                         pattern='to_start'),
+                    MessageHandler(Filters.text & ~Filters.command,
+                                              save_question),
+                ],
             },
             fallbacks=[CommandHandler('cancel', cancel)],
         )
@@ -430,16 +442,6 @@ class Command(BaseCommand):
         dispatcher.add_handler(conv_handler)
         start_handler = CommandHandler('start', start_conversation)
         dispatcher.add_handler(start_handler)
-
-        dispatcher.add_handler(CallbackQueryHandler(input_time,
-                                                    pattern='input_time'))
-        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command,
-                                              shift_reports))
-
-        dispatcher.add_handler(CallbackQueryHandler(ask_question,
-                                                    pattern='ask_question'))
-        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command,
-                                              save_question))
 
         updater.start_polling()
         updater.idle()
