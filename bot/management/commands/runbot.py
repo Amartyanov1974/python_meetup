@@ -30,7 +30,7 @@ from bot.models import (
 
 
 from python_meetup import settings
-
+from datetime import timedelta
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s', level=logging.INFO,
@@ -59,13 +59,9 @@ class Command(BaseCommand):
             if member.is_organizer:
                 keyboard = [
                     [
-                        InlineKeyboardButton('Начало выступления', callback_data='start_meeting'),
-                        InlineKeyboardButton('Конец выступления', callback_data='end_meeting'),
+                        InlineKeyboardButton('План мероприятия', callback_data='to_currrent'),
+                        InlineKeyboardButton('Перенос докладов', callback_data='shift_reports'),
                     ],
-                    # [
-                    #     InlineKeyboardButton('Оповестить участников о новом выступлении', callback_data='view_program'),
-                    # ],
-
                 ]
             elif member.is_speaker:
                 keyboard = [
@@ -99,40 +95,6 @@ class Command(BaseCommand):
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
             return 'MAIN_MENU'
-        
-
-        def start_meeting(update, _):
-            query = update.callback_query
-            keyboard = [
-                [
-                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
-                ],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.answer()
-            query.edit_message_text(
-                text='Что то должно произойти',
-                reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
-            )
-            return 'START_MEETING'
-
-        def end_meeting(update, _):
-            query = update.callback_query
-            keyboard = [
-                [
-                    InlineKeyboardButton('Вернуться на главную', callback_data='to_start'),
-                ],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            query.answer()
-            query.edit_message_text(
-                text='Что то должно произойти',
-                reply_markup=reply_markup,
-                parse_mode=telegram.ParseMode.MARKDOWN,
-            )
-            return 'END_MEETING'
-            
 
         def get_questions(update, context):
             query = update.callback_query
@@ -311,6 +273,26 @@ class Command(BaseCommand):
 
             return 'MAIN_MENU'
 
+        def shift_reports(update, _):
+            query = update.callback_query
+
+            now = datetime.now()
+            current_report = Report.objects.filter(start_at__lt=now, end_at__gt=now).first()
+            future_reports = Report.objects.filter(start_at__gt=now)
+
+
+            if current_report:
+                current_report.end_at += timedelta(minutes=30)
+                current_report.save()
+
+            for report in future_reports:
+                report.start_at += timedelta(minutes=30)
+                report.end_at += timedelta(minutes=30)
+                report.save()
+
+            query.answer(text="Время всех докладов успешно сдвинуто на 30 минут.")
+
+            return 'MAIN_MENU'
 
         def cancel(update, _):
             user = update.message.from_user
@@ -326,11 +308,10 @@ class Command(BaseCommand):
                           ],
             states={
                 'MAIN_MENU': [
-                    CallbackQueryHandler(start_meeting, pattern='start_meeting'),
-                    CallbackQueryHandler(end_meeting, pattern='end_meeting'),
                     CallbackQueryHandler(show_conference_program, pattern='to_currrent'),
                     CallbackQueryHandler(get_questions, pattern='get_questions'),
                     CallbackQueryHandler(show_abilities, pattern='about_bot'),
+                    CallbackQueryHandler(shift_reports, pattern='shift_reports'),
                 ],
                 'REPORTS': [
                     CallbackQueryHandler(show_conference_program, pattern='to_previous'),
