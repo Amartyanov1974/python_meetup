@@ -63,11 +63,8 @@ class Command(BaseCommand):
                         InlineKeyboardButton('План мероприятия',
                                              callback_data='to_currrent'),
 
-                        # InlineKeyboardButton('Перенос докладов',
-                        #                      callback_data='input_time'),
-
                         InlineKeyboardButton('Перенос докладов',
-                                             callback_data='shift_reports'),
+                                             callback_data='input_time'),
                     ],
                 ]
             elif member.is_speaker:
@@ -111,7 +108,7 @@ class Command(BaseCommand):
 
         def input_time(update, context):
             query = update.callback_query
-            # Проверка наличия текущего доклада
+
             now = datetime.now()
             current_report = Report.objects.filter(start_at__lte=now,
                                                    end_at__gte=now).first()
@@ -126,7 +123,7 @@ class Command(BaseCommand):
 
             query.answer()
             query.edit_message_text(
-                text='Введите время в минутах:',
+                text='Введите время в минутах на сколько хотите сдвинуть программу:',
                 reply_markup=reply_markup,
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
@@ -277,7 +274,7 @@ class Command(BaseCommand):
             query = update.callback_query
             member = Member.objects.get(chat_id=query.message.chat.id)
 
-            # Проверка наличия текущего докладчика
+
             now = datetime.now()
             current_report = Report.objects.filter(start_at__lte=now,
                                                    end_at__gte=now).first()
@@ -333,14 +330,11 @@ class Command(BaseCommand):
             return 'MAIN_MENU'
 
         def shift_reports(update, context):
-            minutes = 15
 
-            # try:
-                # minute = int(update.message.text)
-            # except ValueError:
-                # return 'INPUT_TIME'
-
-            query = update.callback_query
+            try:
+                minutes = int(update.message.text)
+            except ValueError:
+                return 'INPUT_TIME'
 
             now = datetime.now()
             current_report = Report.objects.filter(start_at__lt=now,
@@ -355,7 +349,9 @@ class Command(BaseCommand):
                 report.start_at += timedelta(minutes=minutes)
                 report.end_at += timedelta(minutes=minutes)
                 report.save()
-            query.answer(text=f'Время всех докладов успешно сдвинуто на {minutes} минут.')
+
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                                     text=f'Время всех докладов успешно сдвинуто на {minutes} минут.')
 
             return 'MAIN_MENU'
 
@@ -378,10 +374,7 @@ class Command(BaseCommand):
                     CallbackQueryHandler(show_abilities,
                                          pattern='about_bot'),
 
-                    # CallbackQueryHandler(input_time, pattern='input_time'),
-
-                    CallbackQueryHandler(shift_reports,
-                                         pattern='shift_reports'),
+                    CallbackQueryHandler(input_time, pattern='input_time'),
                 ],
                 'REPORTS': [
                     CallbackQueryHandler(show_conference_program,
@@ -429,10 +422,10 @@ class Command(BaseCommand):
         start_handler = CommandHandler('start', start_conversation)
         dispatcher.add_handler(start_handler)
 
-        # dispatcher.add_handler(CallbackQueryHandler(input_time,
-        #                                             pattern='input_time'))
-        # dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command,
-        #                                       shift_reports))
+        dispatcher.add_handler(CallbackQueryHandler(input_time,
+                                                    pattern='input_time'))
+        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command,
+                                              shift_reports))
 
         dispatcher.add_handler(CallbackQueryHandler(ask_question,
                                                     pattern='ask_question'))
