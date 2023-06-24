@@ -409,8 +409,8 @@ class Command(BaseCommand):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             context.bot.send_invoice(
-                chat_id,
-                'Донат',
+                chat_id=chat_id,
+                title='Донат',
                 description='Донат',
                 payload='payload',
                 provider_token=token,
@@ -421,8 +421,7 @@ class Command(BaseCommand):
                 prices=[
                     LabeledPrice(label='Донат', amount=amount_in_kopecks)
                 ],
-                start_parameter='start_parameter',
-                reply_markup=reply_markup,
+                start_parameter='test',
             )
             return 'WAITING_PAYMENT'
 
