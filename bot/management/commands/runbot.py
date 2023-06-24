@@ -18,7 +18,7 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     ConversationHandler,
-
+    PreCheckoutQueryHandler,
 )
 
 from bot.models import (
@@ -396,8 +396,8 @@ class Command(BaseCommand):
             return 'SEND_INVOICE'
 
         def send_invoice(update, context):
-            amount_in_rubles = int(update.message.text)  # получаем сумму от пользователя
-            amount_in_kopecks = amount_in_rubles * 100  # конвертируем в копейки
+            amount_in_rubles = int(update.message.text)
+            amount_in_kopecks = amount_in_rubles * 100
 
             token = settings.payments_token
             chat_id = update.effective_message.chat_id
@@ -405,7 +405,8 @@ class Command(BaseCommand):
 
             keyboard = [
                 [InlineKeyboardButton('Оплатить', pay=True)],
-                [InlineKeyboardButton('На главную', callback_data='to_start'), ],
+                [InlineKeyboardButton('На главную',
+                                      callback_data='to_start'), ],
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             context.bot.send_invoice(
@@ -423,13 +424,50 @@ class Command(BaseCommand):
                 ],
                 start_parameter='test',
             )
-            return 'WAITING_PAYMENT'
+            return 'SUCCESS_PAYMENT'
+
+        def process_pre_checkout_query(update, context):
+            query = update.pre_checkout_query
+            try:
+                pass
+            except:
+                context.bot.answer_pre_checkout_query(
+                    pre_checkout_query_id=query.id,
+                    ok=False,
+                    error_message="Что-то пошло не так...",
+                )
+            else:
+                context.bot.answer_pre_checkout_query(query.id, ok=True)
+
+        def success_payment(update, context):
+            '''Обработка успешной оплаты'''
+            amount = update.message.successful_payment.total_amount / 100
+            text = f'✅ Спасибо за оплату {amount} руб.!\n\n'
+            keyboard = [
+                [
+                    InlineKeyboardButton("На главный",
+                                         callback_data="to_start"),
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.message.reply_text(
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode=telegram.ParseMode.HTML,
+            )
+
+            return 'SUCCESS_PAYMENT'
 
         def cancel(update, _):
             update.message.reply_text('До новых встреч',
                                       reply_markup=ReplyKeyboardRemove(),)
             return ConversationHandler.END
-
+            
+        pre_checkout_handler = PreCheckoutQueryHandler(process_pre_checkout_query)
+        success_payment_handler = MessageHandler(Filters.successful_payment,
+                                                 success_payment)
+        dispatcher.add_handler(pre_checkout_handler)
+        dispatcher.add_handler(success_payment_handler)
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('start', start_conversation),
                           CallbackQueryHandler(start_conversation,
@@ -505,8 +543,12 @@ class Command(BaseCommand):
                     CallbackQueryHandler(ask_amount, pattern='donate'),
                     MessageHandler(Filters.text & ~Filters.command, send_invoice),
                 ],
-                'WAITING_PAYMENT': [
-                    CallbackQueryHandler(start_conversation, pattern='to_start')
+                'PROCESS_PRE_CHECKOUT': [
+                    PreCheckoutQueryHandler(process_pre_checkout_query),
+                    CallbackQueryHandler(success_payment, pattern='success_payment'),
+                ],
+                'SUCCESS_PAYMENT': [
+                    CallbackQueryHandler(start_conversation, pattern='to_start'),
                 ],
             },
             fallbacks=[CommandHandler('cancel', cancel)],
@@ -516,6 +558,6 @@ class Command(BaseCommand):
         start_handler = CommandHandler('start', start_conversation)
         dispatcher.add_handler(start_handler)
         dispatcher.add_handler(CallbackQueryHandler(send_invoice, pattern='to_pay_now'))
-
+        
         updater.start_polling()
         updater.idle()
