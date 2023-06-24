@@ -23,7 +23,6 @@ from bot.models import (
     Member,
     Report,
     Question,
-    Event,
 )
 
 from python_meetup import settings
@@ -94,10 +93,10 @@ class Command(BaseCommand):
                                              callback_data='about_bot'),
                     ],
                 ]
-            txt = f'Здравствуйте, {username}! \nРады приветствовать Вас на нашей конференции!'
+            txt = 'Здравствуйте, {}! \nРады приветствовать Вас на нашей конференции!'
             if query:
                 query.edit_message_text(
-                    text=txt,
+                    text=txt.format(username),
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
             else:
@@ -203,10 +202,18 @@ class Command(BaseCommand):
             query.answer()
             context.chat_data['chat_id'] = ''
             if query.data == 'to_previous':
+                trend = context.chat_data['trend']
+                if trend == 'left':
+                    report_id = context.chat_data['report_id']
+                else:
+                    context.chat_data['trend'] = 'left'
+                    report_id = 0
                 now = datetime.now()
-                report = Report.objects.filter(end_at__lt=now) \
-                    .order_by('-end_at').first()
-                if report:
+                reports = Report.objects.select_related('speaker') \
+                    .filter(end_at__lt=now)
+                if reports and (reports.count() > report_id):
+                    report = reports.order_by('-end_at')[report_id]
+                    context.chat_data['report_id'] = report_id + 1
                     context.chat_data['chat_id'] = report.speaker.chat_id
                     txt = TEXT['report'] \
                         .format(report.title, report.speaker,
@@ -220,9 +227,11 @@ class Command(BaseCommand):
                     parse_mode=telegram.ParseMode.HTML,
                 )
             elif query.data == 'to_currrent':
+                context.chat_data['report_id'] = 0
+                context.chat_data['trend'] = ''
                 now = datetime.now()
-                report = Report.objects.filter(start_at__lt=now,
-                                               end_at__gt=now).first()
+                report = Report.objects.select_related('speaker') \
+                    .filter(start_at__lt=now, end_at__gt=now).first()
                 if report:
                     context.chat_data['chat_id'] = report.speaker.chat_id
                     txt = TEXT['report'] \
@@ -237,10 +246,19 @@ class Command(BaseCommand):
                     parse_mode=telegram.ParseMode.HTML,
                 )
             elif query.data == 'to_next':
+                trend = context.chat_data['trend']
+                if trend == 'right':
+                    report_id = context.chat_data['report_id']
+                else:
+                    context.chat_data['trend'] = 'right'
+                    report_id = 0
                 now = datetime.now()
-                report = Report.objects.filter(start_at__gt=now) \
-                    .order_by('start_at').first()
-                if report:
+                reports = Report.objects.select_related('speaker') \
+                    .filter(start_at__gt=now)
+                print(reports.count(), report_id)
+                if reports and (reports.count() > report_id):
+                    report = reports.order_by('start_at')[report_id]
+                    context.chat_data['report_id'] = report_id + 1
                     context.chat_data['chat_id'] = report.speaker.chat_id
                     txt = TEXT['report'] \
                         .format(report.title, report.speaker,
@@ -283,7 +301,6 @@ class Command(BaseCommand):
                 return 'REPORTS'
 
             responder = Member.objects.get(chat_id=chat_id)
-            responder_id = responder.id
             context.chat_data['asker'] = asker_name
             context.chat_data['responder_id'] = responder.id
 
@@ -352,11 +369,13 @@ class Command(BaseCommand):
                 txt = f'Ваш доклад сдвинут на {minutes} минут!'
                 try:
                     context.bot.send_message(chat_id=report.speaker.chat_id,
-                                            text=txt)
+                                             text=txt)
                 except telegram.error.BadRequest:
-                    pass                            
+                    pass
 
-            reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton('На главную', callback_data='to_start')]])
+            reply_markup = InlineKeyboardMarkup(
+                [[InlineKeyboardButton('На главную',
+                                       callback_data='to_start')]])
 
             context.bot.send_message(chat_id=update.effective_chat.id,
                                      text=f'Время всех докладов успешно сдвинуто на {minutes} минут.',
@@ -426,13 +445,13 @@ class Command(BaseCommand):
                     CallbackQueryHandler(start_conversation,
                                          pattern='to_start'),
                     MessageHandler(Filters.text & ~Filters.command,
-                                              shift_reports),
+                                   shift_reports),
                 ],
                 'SAVE_QUESTION': [
                     CallbackQueryHandler(start_conversation,
                                          pattern='to_start'),
                     MessageHandler(Filters.text & ~Filters.command,
-                                              save_question),
+                                   save_question),
                 ],
             },
             fallbacks=[CommandHandler('cancel', cancel)],
