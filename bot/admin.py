@@ -29,7 +29,12 @@ class ReportAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        'title',
+        'asker',
+        'responder',
+
+    )
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
