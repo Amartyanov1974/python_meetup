@@ -9,6 +9,7 @@ from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     ReplyKeyboardRemove,
+    LabeledPrice,
 )
 from telegram.ext import (
     Updater,
@@ -17,6 +18,7 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     ConversationHandler,
+
 )
 
 from bot.models import (
@@ -72,6 +74,8 @@ class Command(BaseCommand):
                     [
                         InlineKeyboardButton('Посмотреть вопросы',
                                              callback_data='get_questions'),
+                        InlineKeyboardButton('Донат',
+                                             callback_data='to_donate'),
                     ],
                     [
                         InlineKeyboardButton('План мероприятия',
@@ -87,6 +91,8 @@ class Command(BaseCommand):
                     [
                         InlineKeyboardButton('План мероприятия',
                                              callback_data='to_currrent'),
+                        InlineKeyboardButton('Донат',
+                                             callback_data='to_donate'),
                     ],
                     [
                         InlineKeyboardButton('О боте',
@@ -94,14 +100,15 @@ class Command(BaseCommand):
                     ],
                 ]
             txt = 'Здравствуйте, {}! \nРады приветствовать Вас на нашей конференции!'
-            if query:
+            if query and not context.user_data.get('invoice_sended', False):
                 query.edit_message_text(
                     text=txt.format(username),
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
             else:
-                update.message.reply_text(
-                    text=txt,
+                context.bot.send_message(
+                    chat_id=chat_id,
+                    text=txt.format(username),
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
             return 'MAIN_MENU'
@@ -382,6 +389,43 @@ class Command(BaseCommand):
                                      reply_markup=reply_markup)
             return 'SHIFT_REPORTS'
 
+        def ask_amount(update, context):
+            query = update.callback_query
+            query.answer()
+            query.message.reply_text('Сколько вы хотите донатить?')
+            return 'SEND_INVOICE'
+
+        def send_invoice(update, context):
+            amount_in_rubles = int(update.message.text)  # получаем сумму от пользователя
+            amount_in_kopecks = amount_in_rubles * 100  # конвертируем в копейки
+
+            token = settings.payments_token
+            chat_id = update.effective_message.chat_id
+            context.user_data['invoice_sended'] = True
+
+            keyboard = [
+                [InlineKeyboardButton('Оплатить', pay=True)],
+                [InlineKeyboardButton('На главную', callback_data='to_start'), ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            context.bot.send_invoice(
+                chat_id,
+                'Донат',
+                description='Донат',
+                payload='payload',
+                provider_token=token,
+                currency='RUB',
+                need_phone_number=False,
+                need_email=False,
+                is_flexible=False,
+                prices=[
+                    LabeledPrice(label='Донат', amount=amount_in_kopecks)
+                ],
+                start_parameter='start_parameter',
+                reply_markup=reply_markup,
+            )
+            return 'WAITING_PAYMENT'
+
         def cancel(update, _):
             update.message.reply_text('До новых встреч',
                                       reply_markup=ReplyKeyboardRemove(),)
@@ -400,6 +444,8 @@ class Command(BaseCommand):
                                          pattern='get_questions'),
                     CallbackQueryHandler(show_abilities,
                                          pattern='about_bot'),
+                    CallbackQueryHandler(ask_amount,
+                                         pattern='to_donate'),
 
                     CallbackQueryHandler(input_time, pattern='input_time'),
                 ],
@@ -453,6 +499,16 @@ class Command(BaseCommand):
                     MessageHandler(Filters.text & ~Filters.command,
                                    save_question),
                 ],
+                'ASK_AMOUNT': [
+                    MessageHandler(Filters.text & ~Filters.command, ask_amount)
+                ],
+                'SEND_INVOICE': [
+                    CallbackQueryHandler(ask_amount, pattern='donate'),
+                    MessageHandler(Filters.text & ~Filters.command, send_invoice),
+                ],
+                'WAITING_PAYMENT': [
+                    CallbackQueryHandler(start_conversation, pattern='to_start')
+                ],
             },
             fallbacks=[CommandHandler('cancel', cancel)],
         )
@@ -460,6 +516,7 @@ class Command(BaseCommand):
         dispatcher.add_handler(conv_handler)
         start_handler = CommandHandler('start', start_conversation)
         dispatcher.add_handler(start_handler)
+        dispatcher.add_handler(CallbackQueryHandler(send_invoice, pattern='to_pay_now'))
 
         updater.start_polling()
         updater.idle()

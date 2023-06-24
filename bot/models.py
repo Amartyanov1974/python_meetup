@@ -14,7 +14,7 @@ class Member(models.Model):
         verbose_name_plural = 'Участники'
 
     def __str__(self):
-        return self.name
+        return self.name if self.name else "Unnamed member"
 
 
 class Report(models.Model):
@@ -56,7 +56,7 @@ class Question(models.Model):
         verbose_name_plural = 'Вопросы'
 
     def __str__(self):
-        return f'#{self.pk} {self.title}'
+        return f'#{self.pk} {self.title}' if self.title else f'#{self.pk}'
 
 
 class Event(models.Model):
