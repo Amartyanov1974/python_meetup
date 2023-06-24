@@ -484,7 +484,8 @@ class Command(BaseCommand):
                     CallbackQueryHandler(ask_amount,
                                          pattern='to_donate'),
 
-                    CallbackQueryHandler(input_time, pattern='input_time'),
+                    CallbackQueryHandler(input_time,
+                                         pattern='input_time'),
                 ],
                 'REPORTS': [
                     CallbackQueryHandler(show_conference_program,
@@ -537,18 +538,22 @@ class Command(BaseCommand):
                                    save_question),
                 ],
                 'ASK_AMOUNT': [
-                    MessageHandler(Filters.text & ~Filters.command, ask_amount)
+                    MessageHandler(Filters.text & ~Filters.command,
+                                   ask_amount)
                 ],
                 'SEND_INVOICE': [
                     CallbackQueryHandler(ask_amount, pattern='donate'),
-                    MessageHandler(Filters.text & ~Filters.command, send_invoice),
+                    MessageHandler(Filters.text & ~Filters.command,
+                                   send_invoice),
                 ],
                 'PROCESS_PRE_CHECKOUT': [
                     PreCheckoutQueryHandler(process_pre_checkout_query),
-                    CallbackQueryHandler(success_payment, pattern='success_payment'),
+                    CallbackQueryHandler(success_payment,
+                                         pattern='success_payment'),
                 ],
                 'SUCCESS_PAYMENT': [
-                    CallbackQueryHandler(start_conversation, pattern='to_start'),
+                    CallbackQueryHandler(start_conversation,
+                                         pattern='to_start'),
                 ],
             },
             fallbacks=[CommandHandler('cancel', cancel)],
@@ -557,7 +562,8 @@ class Command(BaseCommand):
         dispatcher.add_handler(conv_handler)
         start_handler = CommandHandler('start', start_conversation)
         dispatcher.add_handler(start_handler)
-        dispatcher.add_handler(CallbackQueryHandler(send_invoice, pattern='to_pay_now'))
+        dispatcher.add_handler(CallbackQueryHandler(send_invoice,
+                                                    pattern='to_pay_now'))
         
         updater.start_polling()
         updater.idle()
