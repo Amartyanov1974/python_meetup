@@ -47,7 +47,7 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **kwargs):
-        updater = Updater(token=settings.tg_token, use_context=True)
+        updater = Updater(token=settings.telegram_token, use_context=True)
         dispatcher = updater.dispatcher
 
         def start_conversation(update, context):
@@ -467,108 +467,111 @@ class Command(BaseCommand):
             update.message.reply_text('До новых встреч',
                                       reply_markup=ReplyKeyboardRemove(),)
             return ConversationHandler.END
+
+        def main(self):    
+            pre_checkout_handler = PreCheckoutQueryHandler(process_pre_checkout_query)
+            success_payment_handler = MessageHandler(Filters.successful_payment,
+                                                     success_payment)
+            dispatcher.add_handler(pre_checkout_handler)
+            dispatcher.add_handler(success_payment_handler)
+            conv_handler = ConversationHandler(
+                entry_points=[CommandHandler('start', start_conversation),
+                              CallbackQueryHandler(start_conversation,
+                                                   pattern='to_start'),
+                              ],
+                states={
+                    'MAIN_MENU': [
+                        CallbackQueryHandler(show_conference_program,
+                                             pattern='to_currrent'),
+                        CallbackQueryHandler(get_questions,
+                                             pattern='get_questions'),
+                        CallbackQueryHandler(show_abilities,
+                                             pattern='about_bot'),
+                        CallbackQueryHandler(ask_amount,
+                                             pattern='to_donate'),
+
+                        CallbackQueryHandler(input_time,
+                                             pattern='input_time'),
+                    ],
+                    'REPORTS': [
+                        CallbackQueryHandler(show_conference_program,
+                                             pattern='to_previous'),
+                        CallbackQueryHandler(show_conference_program,
+                                             pattern='to_currrent'),
+                        CallbackQueryHandler(show_conference_program,
+                                             pattern='to_next'),
+                        CallbackQueryHandler(show_conference_program,
+                                             pattern='to_program'),
+                        CallbackQueryHandler(ask_question,
+                                             pattern='ask_question'),
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'GET_QUESTIONS': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'START_MEETING': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'END_MEETING': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'ASK_QUESTION': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'INPUT_TIME': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'ABILITIES': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                    'SHIFT_REPORTS': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                        MessageHandler(Filters.text & ~Filters.command,
+                                       shift_reports),
+                    ],
+                    'SAVE_QUESTION': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                        MessageHandler(Filters.text & ~Filters.command,
+                                       save_question),
+                    ],
+                    'ASK_AMOUNT': [
+                        MessageHandler(Filters.text & ~Filters.command,
+                                       ask_amount)
+                    ],
+                    'SEND_INVOICE': [
+                        CallbackQueryHandler(ask_amount, pattern='donate'),
+                        MessageHandler(Filters.text & ~Filters.command,
+                                       send_invoice),
+                    ],
+                    'PROCESS_PRE_CHECKOUT': [
+                        PreCheckoutQueryHandler(process_pre_checkout_query),
+                        CallbackQueryHandler(success_payment,
+                                             pattern='success_payment'),
+                    ],
+                    'SUCCESS_PAYMENT': [
+                        CallbackQueryHandler(start_conversation,
+                                             pattern='to_start'),
+                    ],
+                },
+                fallbacks=[CommandHandler('cancel', cancel)],
+            )
+
+            dispatcher.add_handler(conv_handler)
+            start_handler = CommandHandler('start', start_conversation)
+            dispatcher.add_handler(start_handler)
+            dispatcher.add_handler(CallbackQueryHandler(send_invoice,
+                                                        pattern='to_pay_now'))
             
-        pre_checkout_handler = PreCheckoutQueryHandler(process_pre_checkout_query)
-        success_payment_handler = MessageHandler(Filters.successful_payment,
-                                                 success_payment)
-        dispatcher.add_handler(pre_checkout_handler)
-        dispatcher.add_handler(success_payment_handler)
-        conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', start_conversation),
-                          CallbackQueryHandler(start_conversation,
-                                               pattern='to_start'),
-                          ],
-            states={
-                'MAIN_MENU': [
-                    CallbackQueryHandler(show_conference_program,
-                                         pattern='to_currrent'),
-                    CallbackQueryHandler(get_questions,
-                                         pattern='get_questions'),
-                    CallbackQueryHandler(show_abilities,
-                                         pattern='about_bot'),
-                    CallbackQueryHandler(ask_amount,
-                                         pattern='to_donate'),
-
-                    CallbackQueryHandler(input_time,
-                                         pattern='input_time'),
-                ],
-                'REPORTS': [
-                    CallbackQueryHandler(show_conference_program,
-                                         pattern='to_previous'),
-                    CallbackQueryHandler(show_conference_program,
-                                         pattern='to_currrent'),
-                    CallbackQueryHandler(show_conference_program,
-                                         pattern='to_next'),
-                    CallbackQueryHandler(show_conference_program,
-                                         pattern='to_program'),
-                    CallbackQueryHandler(ask_question,
-                                         pattern='ask_question'),
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'GET_QUESTIONS': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'START_MEETING': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'END_MEETING': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'ASK_QUESTION': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'INPUT_TIME': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'ABILITIES': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-                'SHIFT_REPORTS': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                    MessageHandler(Filters.text & ~Filters.command,
-                                   shift_reports),
-                ],
-                'SAVE_QUESTION': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                    MessageHandler(Filters.text & ~Filters.command,
-                                   save_question),
-                ],
-                'ASK_AMOUNT': [
-                    MessageHandler(Filters.text & ~Filters.command,
-                                   ask_amount)
-                ],
-                'SEND_INVOICE': [
-                    CallbackQueryHandler(ask_amount, pattern='donate'),
-                    MessageHandler(Filters.text & ~Filters.command,
-                                   send_invoice),
-                ],
-                'PROCESS_PRE_CHECKOUT': [
-                    PreCheckoutQueryHandler(process_pre_checkout_query),
-                    CallbackQueryHandler(success_payment,
-                                         pattern='success_payment'),
-                ],
-                'SUCCESS_PAYMENT': [
-                    CallbackQueryHandler(start_conversation,
-                                         pattern='to_start'),
-                ],
-            },
-            fallbacks=[CommandHandler('cancel', cancel)],
-        )
-
-        dispatcher.add_handler(conv_handler)
-        start_handler = CommandHandler('start', start_conversation)
-        dispatcher.add_handler(start_handler)
-        dispatcher.add_handler(CallbackQueryHandler(send_invoice,
-                                                    pattern='to_pay_now'))
-        
-        updater.start_polling()
-        updater.idle()
+            updater.start_polling()
+            updater.idle()
+            
+        main(self)
