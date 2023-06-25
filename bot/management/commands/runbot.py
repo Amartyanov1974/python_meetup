@@ -100,17 +100,22 @@ class Command(BaseCommand):
                     ],
                 ]
             txt = 'Здравствуйте, {}! \nРады приветствовать Вас на нашей конференции!'
-            if query and not context.user_data.get('invoice_sended', False):
+            if query and query.data == 'to_start' and context.user_data.get('invoice_sended', False):
                 query.edit_message_text(
                     text=txt.format(username),
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
+                context.user_data['invoice_sended'] = False
             else:
+                if query:
+                    context.bot.delete_message(chat_id=chat_id, message_id=query.message.message_id)
+
                 context.bot.send_message(
                     chat_id=chat_id,
                     text=txt.format(username),
                     reply_markup=InlineKeyboardMarkup(keyboard),
                 )
+
             return 'MAIN_MENU'
 
         def input_time(update, context):
