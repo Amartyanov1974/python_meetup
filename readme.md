@@ -24,8 +24,9 @@ pip install -r requirements.txt
 Создайте файл **.env** вида:
 ```properties
 TG_TOKEN=YOUR_TG_TOKEN
+PAYMENTS_TOKEN=PAYMENTS_TOKEN
 ```
-Токен для Телеграм бота вы можете получить https://telegram.me/BotFather
+Получить токен для Телеграм бота и подключить к нему оплату вы можете через [BotFather](https://telegram.me/BotFather)
 
 Создайте базу данных:
 
