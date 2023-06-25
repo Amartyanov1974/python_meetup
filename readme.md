@@ -24,8 +24,9 @@ pip install -r requirements.txt
 Создайте файл **.env** вида:
 ```properties
 TG_TOKEN=YOUR_TG_TOKEN
+PAYMENTS_TOKEN=PAYMENTS_TOKEN
 ```
-Токен для Телеграм бота вы можете получить https://telegram.me/BotFather
+Получить токен для Телеграм бота и подключить к нему оплату вы можете через [BotFather](https://telegram.me/BotFather)
 
 Создайте базу данных:
 
@@ -65,18 +66,20 @@ python manage.py runserver
 
 Меню спикера 
 
-<img width="545" alt="Меню спикера" src="https://github.com/RomanRVV/python_meetup/assets/129319859/c26efbef-0c1b-4230-b59f-1bbcbf7c6b81">
+<img width="552" alt="спикер" src="https://github.com/RomanRVV/python_meetup/assets/129319859/dcd3ef4d-74f9-4dac-b55b-ae06ff94f433">
 
 - `Посмотреть вопросы` – можно посмотреть адресованные Вам вопросы, также будет указан никнейм спросившего
+- `Донат` - можно поддержать проект на указанную Вами сумму
 - `План мероприятия` - такая же кнопка как у организатора и участника
 - `О боте` - описание бота
 
 
 Меню участника
 
-<img width="544" alt="Меню участника" src="https://github.com/RomanRVV/python_meetup/assets/129319859/a3cd6191-4627-4f8d-93d1-507f44d5552c">
+<img width="556" alt="участник" src="https://github.com/RomanRVV/python_meetup/assets/129319859/7b4fe174-6a1b-46fc-877c-7e97d6ef3b07">
 
 - `План мероприятия` - такая же кнопка как у организатора и спикера
+- `Донат` - можно поддержать проект на указанную Вами сумму
 - `О боте` - описание бота
 
 
